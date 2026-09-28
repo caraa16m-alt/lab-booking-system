@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>實時場地預約系統 | Real-time Lab Booking System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand & Title -->
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-xl flex items-center justify-center shadow-md">
+                    <i data-lucide="flask-conical" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg text-slate-900 leading-tight" data-i18n="systemTitle">實驗室場地預約系統</h1>
+                    <p class="text-xs text-slate-500" data-i18n="systemSubTitle">物理室 / 化學室 實時預約與管理</p>
+                </div>
+            </div>
+
+            <!-- Controls: Live Indicator, Language Switch, Role Switch, Admin Logout -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <!-- Live Status Indicator -->
+                <div class="hidden md:flex items-center text-xs text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full mr-1.5 animate-pulse"></span>
+                    <span data-i18n="liveConnected">實時同步中</span>
+                </div>
+
+                <!-- Language Selector Button -->
+                <button onclick="toggleLanguage()" class="px-2.5 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition flex items-center space-x-1.5">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-indigo-600"></i>
+                    <span id="lang-label-text">English</span>
+                </button>
+
+                <!-- Toggle Role Switch -->
+                <div class="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center text-xs font-semibold">
+                    <button id="role-user-btn" onclick="switchRole('user')" class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center space-x-1 bg-white text-indigo-600 shadow-sm font-bold">
+                        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                        <span data-i18n="roleUser">預約者模式</span>
+                    </button>
+                    <button id="role-admin-btn" onclick="switchRole('admin')" class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center space-x-1 text-slate-600 hover:text-slate-900">
+                        <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                        <span data-i18n="roleAdmin">管理員模式</span>
+                    </button>
+                </div>
+
+                <!-- Admin Logout Button -->
+                <button id="admin-logout-btn" onclick="adminLogout()" class="hidden px-2.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-xs font-semibold text-rose-700 transition flex items-center space-x-1">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+                    <span data-i18n="btnLogout">登出</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Venue Selector, Calendar View, Selected Date 9 Slots Overview -->
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+
+            <!-- Venue Switcher & Month Navigation Controls -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+                <!-- Venue Selector -->
+                <div class="flex space-x-1 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
+                    <button id="venue-physics-btn" onclick="switchVenue('physics')" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-2 bg-indigo-600 text-white shadow-sm">
+                        <i data-lucide="atom" class="w-4 h-4"></i>
+                        <span data-i18n="venuePhysics">物理室</span>
+                    </button>
+                    <button id="venue-chemistry-btn" onclick="switchVenue('chemistry')" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900">
+                        <i data-lucide="flask-round" class="w-4 h-4"></i>
+                        <span data-i18n="venueChemistry">化學室</span>
+                    </button>
+                </div>
+
+                <!-- Calendar Navigation -->
+                <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <button onclick="changeMonth(-1)" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <span id="calendar-month-year" class="font-bold text-slate-800 text-base min-w-[130px] text-center">---</span>
+                    <button onclick="changeMonth(1)" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 transition">
+                        <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Monthly Calendar Grid View -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <!-- Days of Week Header -->
+                <div class="grid grid-cols-7 bg-slate-50 border-b border-slate-200 text-center py-2.5 text-xs font-semibold text-slate-500">
+                    <div data-i18n="daySun">日</div>
+                    <div data-i18n="dayMon">一</div>
+                    <div data-i18n="dayTue">二</div>
+                    <div data-i18n="dayWed">三</div>
+                    <div data-i18n="dayThu">四</div>
+                    <div data-i18n="dayFri">五</div>
+                    <div data-i18n="daySat">六</div>
+                </div>
+                <!-- Calendar Grid Container -->
+                <div id="calendar-grid" class="grid grid-cols-7 auto-rows-fr gap-px bg-slate-200 p-px min-h-[420px]">
+                    <!-- Dynamic calendar cells -->
+                </div>
+            </div>
+
+            <!-- Selected Date 9-Slots Overview -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                            <i data-lucide="clock" class="w-4 h-4 text-indigo-600"></i>
+                            <span id="selected-date-title">---</span>
+                            <span data-i18n="slotsTitleSuffix">預約狀況</span>
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">
+                            <span data-i18n="currentVenueLabel">目前檢視：</span><span id="venue-indicator-text" class="font-semibold text-indigo-600">物理室</span>
+                        </p>
+                    </div>
+
+                    <!-- Admin Date Disable Switcher -->
+                    <div id="admin-date-toggle-container" class="hidden">
+                        <button id="toggle-date-disabled-btn" onclick="toggleDateDisabledState()" class="px-3 py-1.5 text-xs rounded-lg font-medium border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition flex items-center space-x-1">
+                            <i data-lucide="ban" class="w-3.5 h-3.5"></i>
+                            <span id="toggle-date-disabled-text" data-i18n="toggleDisableDate">將此日設為不開放</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 9-Slots Matrix View -->
+                <div id="slots-container" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <!-- Dynamic slots rendered here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: User Booking Form / Admin Management Dashboard -->
+        <section class="lg:col-span-5 space-y-6">
+
+            <!-- USER PANEL: Booking Form -->
+            <div id="user-booking-panel" class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-5">
+                <div class="border-b border-slate-100 pb-3">
+                    <h2 class="font-bold text-slate-900 text-lg flex items-center gap-2">
+                        <i data-lucide="calendar-plus" class="w-5 h-5 text-indigo-600"></i>
+                        <span data-i18n="formTitle">新增場地預約</span>
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5" data-i18n="formSubTitle">填寫資料後提交申請，同一時間與場地無法重複預約。</p>
+                </div>
+
+                <form id="booking-form" onsubmit="handleBookingSubmit(event)" class="space-y-4">
+                    <!-- Venue and Date Display -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <label class="block text-[11px] font-semibold text-slate-500 uppercase" data-i18n="lblVenue">預約場地</label>
+                            <span id="form-venue-display" class="font-bold text-slate-800 text-sm">物理室</span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                            <label class="block text-[11px] font-semibold text-slate-500 uppercase" data-i18n="lblDate">預約日期</label>
+                            <span id="form-date-display" class="font-bold text-slate-800 text-sm">---</span>
+                        </div>
+                    </div>
+
+                    <!-- Single vs Double Slots Choice -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5" data-i18n="lblSlotType">預約模式</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="slot_type" value="single" checked onchange="updateSlotOptions()" class="peer sr-only">
+                                <div class="p-2.5 rounded-xl border border-slate-200 text-center text-xs font-semibold text-slate-600 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-600 transition" data-i18n="btnSingleSlot">
+                                    單一節次 (1節)
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="slot_type" value="double" onchange="updateSlotOptions()" class="peer sr-only">
+                                <div class="p-2.5 rounded-xl border border-slate-200 text-center text-xs font-semibold text-slate-600 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-600 transition" data-i18n="btnDoubleSlot">
+                                    連續節數 (2節)
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Select Session Dropdown -->
+                    <div>
+                        <label for="slot-select" class="block text-xs font-semibold text-slate-700 mb-1" data-i18n="lblSelectSlot">選擇時間節次</label>
+                        <select id="slot-select" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Applicant Name & Class/Unit -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="applicant-name" class="block text-xs font-semibold text-slate-700 mb-1"><span data-i18n="lblName">申請人姓名</span> *</label>
+                            <input type="text" id="applicant-name" required placeholder="例如：張老師" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label for="applicant-org" class="block text-xs font-semibold text-slate-700 mb-1"><span data-i18n="lblOrg">班級 / 單位</span> *</label>
+                            <input type="text" id="applicant-org" required placeholder="例如：高三甲" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Experiment Name Field -->
+                    <div>
+                        <label for="experiment-name" class="block text-xs font-semibold text-slate-700 mb-1"><span data-i18n="lblExpName">實驗名稱</span> *</label>
+                        <input type="text" id="experiment-name" required placeholder="例如：自由落體加速度測定實驗" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition duration-200 flex items-center justify-center space-x-2">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                        <span data-i18n="btnSubmitBooking">提交預約申請</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- ADMIN PANEL: Review & Management -->
+            <div id="admin-management-panel" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div>
+                        <h2 class="font-bold text-slate-900 text-lg flex items-center gap-2">
+                            <i data-lucide="shield-check" class="w-5 h-5 text-indigo-600"></i>
+                            <span data-i18n="adminPanelTitle">預約審核與管理</span>
+                        </h2>
+                        <p class="text-xs text-slate-500" data-i18n="adminPanelSubTitle">管理全場地預約，解決重複衝突與審核排程</p>
+                    </div>
+                    <span id="pending-count-badge" class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                        待審核: 0
+                    </span>
+                </div>
+
+                <!-- Global Overlap Conflict Alert Box -->
+                <div id="conflict-alert-box" class="hidden p-3.5 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
+                    <div class="flex items-center space-x-2 text-rose-700 font-bold text-xs">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600"></i>
+                        <span data-i18n="conflictAlertTitle">檢測到重複預約衝突！</span>
+                    </div>
+                    <p class="text-xs text-rose-600" data-i18n="conflictAlertMsg">同一場地在同一時間有重複的申請，管理員可核准覆蓋或駁回。</p>
+                </div>
+
+                <!-- Admin Filter Tabs -->
+                <div class="flex space-x-1 border-b border-slate-200 text-xs font-semibold">
+                    <button id="admin-tab-all" onclick="setAdminFilter('all')" class="pb-2 px-3 text-indigo-600 border-b-2 border-indigo-600" data-i18n="tabAll">全部</button>
+                    <button id="admin-tab-pending" onclick="setAdminFilter('pending')" class="pb-2 px-3 text-slate-500 hover:text-slate-800" data-i18n="tabPending">待審核</button>
+                    <button id="admin-tab-approved" onclick="setAdminFilter('approved')" class="pb-2 px-3 text-slate-500 hover:text-slate-800" data-i18n="tabApproved">已核准</button>
+                </div>
+
+                <!-- Admin Bookings List -->
+                <div id="admin-booking-list" class="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+                    <!-- Dynamic Items -->
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-login-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white rounded-2xl max-w-sm w-full mx-4 p-6 shadow-2xl space-y-4 border border-slate-100 transform scale-95 transition-transform duration-200" id="admin-login-modal-content">
+            <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
+                <div class="p-2.5 rounded-full bg-indigo-100 text-indigo-600">
+                    <i data-lucide="lock" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base" data-i18n="adminLoginTitle">管理員身份驗證</h3>
+                    <p class="text-xs text-slate-500" data-i18n="adminLoginSub">請輸入管理員密碼以開啟管理功能</p>
+                </div>
+            </div>
+
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+                <div>
+                    <label for="admin-password" class="block text-xs font-semibold text-slate-700 mb-1" data-i18n="lblPassword">管理員密碼</label>
+                    <input type="password" id="admin-password" required placeholder="請輸入密碼" class="w-full bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <p id="login-error-msg" class="text-xs text-rose-600 mt-1.5 hidden" data-i18n="errWrongPassword">密碼不正確，請重新輸入。</p>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-1">
+                    <button type="button" onclick="closeAdminLoginModal()" class="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition" data-i18n="btnCancel">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition" data-i18n="btnLogin">登入驗證</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom General Modal System -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white rounded-2xl max-w-md w-full mx-4 p-6 shadow-2xl space-y-4 border border-slate-100 transform scale-95 transition-transform duration-200" id="custom-modal-content">
+            <div class="flex items-center space-x-3" id="modal-header">
+                <div id="modal-icon-bg" class="p-2.5 rounded-full bg-indigo-100 text-indigo-600">
+                    <i data-lucide="info" class="w-6 h-6" id="modal-icon"></i>
+                </div>
+                <h3 class="font-bold text-slate-900 text-lg" id="modal-title">系統提示</h3>
+            </div>
+            <div class="text-sm text-slate-600 leading-relaxed" id="modal-message"></div>
+            <div class="flex justify-end space-x-2 pt-2" id="modal-actions">
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition" data-i18n="btnOk">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Internationalization (i18n) Translations
+        const i18n = {
+            'zh-TW': {
+                systemTitle: "實驗室場地預約系統",
+                systemSubTitle: "物理室 / 化學室 實時預約與管理",
+                liveConnected: "實時同步中",
+                roleUser: "預約者模式",
+                roleAdmin: "管理員模式",
+                venuePhysics: "物理室",
+                venueChemistry: "化學室",
+                daySun: "日", dayMon: "一", dayTue: "二", dayWed: "三", dayThu: "四", dayFri: "五", daySat: "六",
+                slotsTitleSuffix: "預約狀況",
+                currentVenueLabel: "目前檢視：",
+                toggleDisableDate: "將此日設為不開放",
+                toggleEnableDate: "重新開放此日預約",
+                formTitle: "新增場地預約",
+                formSubTitle: "填寫資料後提交申請，同一時間與場地無法重複預約。",
+                lblVenue: "預約場地",
+                lblDate: "預約日期",
+                lblSlotType: "預約模式",
+                btnSingleSlot: "單一節次 (1節)",
+                btnDoubleSlot: "連續節數 (2節)",
+                lblSelectSlot: "選擇時間節次",
+                lblName: "申請人姓名",
+                lblOrg: "班級 / 單位",
+                lblExpName: "實驗名稱",
+                phName: "例如：張老師",
+                phOrg: "例如：高三甲",
+                phExpName: "例如：自由落體加速度測定實驗",
+                btnSubmitBooking: "提交預約申請",
+                adminPanelTitle: "預約審核與管理",
+                adminPanelSubTitle: "管理全場地預約，解決重複衝突與審核排程",
+                pendingCountLabel: "待審核: ",
+                conflictAlertTitle: "檢測到重複預約衝突！",
+                conflictAlertMsg: "同一場地在同一時間有重複的申請，管理員可核准覆蓋或駁回。",
+                tabAll: "全部",
+                tabPending: "待審核",
+                tabApproved: "已核准",
+                btnOk: "確定",
+                btnCancel: "取消",
+                btnLogin: "登入驗證",
+                btnLogout: "登出",
+                btnConfirmOverride: "確認覆蓋核准",
+                adminLoginTitle: "管理員身份驗證",
+                adminLoginSub: "請輸入管理員密碼以開啟管理功能",
+                lblPassword: "管理員密碼",
+                errWrongPassword: "密碼不正確，請重新輸入。",
+                statusApproved: "已核准",
+                statusPending: "待審核",
+                statusRejected: "已拒絕/取消",
+                statusDisabled: "不開放",
+                statusAvailable: "可預約",
+                statusConflict: "重複衝突",
+                slotPrefix: "第",
+                msgDateDisabled: "該日期此場地已被管理員設置為不開放預約。",
+                msgBookingSubmitted: "預約申請已成功提交！請等待管理員審核。",
+                msgDuplicateUserBlockedTitle: "無法重複預約",
+                msgDuplicateUserBlockedBody: "此場地在所選的時間段已有其他預約（或待審核申請）。<br/><br/><span class=\"text-rose-600 font-semibold\">同一時間同一地點無法重複預約，請選擇其他節次或日期。</span>",
+                msgOverrideTitle: "重複預約覆蓋警告",
+                msgOverrideBody: "核准此預約將與現有已核准預約（班級: {orgs}）產生時段重疊！<br/><br/>是否仍要強制覆蓋並核准？",
+                msgOverrideSuccess: "已將該預約設為核准，並自動替換原衝突預約。",
+                noRecord: "目前沒有相關預約記錄。",
+                btnApprove: "核准",
+                btnReject: "拒絕",
+                btnDelete: "刪除記錄"
+            },
+            'en': {
+                systemTitle: "Laboratory Booking System",
+                systemSubTitle: "Physics / Chemistry Lab Real-time Reservation",
+                liveConnected: "Live Sync",
+                roleUser: "User Mode",
+                roleAdmin: "Admin Mode",
+                venuePhysics: "Physics Lab",
+                venueChemistry: "Chemistry Lab",
+                daySun: "Sun", dayMon: "Mon", dayTue: "Tue", dayWed: "Wed", dayThu: "Thu", dayFri: "Fri", daySat: "Sat",
+                slotsTitleSuffix: "Schedule Status",
+                currentVenueLabel: "Current View: ",
+                toggleDisableDate: "Disable This Date",
+                toggleEnableDate: "Re-enable This Date",
+                formTitle: "New Reservation",
+                formSubTitle: "Fill in details to apply. Duplicate bookings at the same time and venue are not allowed.",
+                lblVenue: "Venue",
+                lblDate: "Date",
+                lblSlotType: "Session Type",
+                btnSingleSlot: "Single Period (1)",
+                btnDoubleSlot: "Double Period (2 Periods)",
+                lblSelectSlot: "Select Period",
+                lblName: "Applicant Name",
+                lblOrg: "Class / Unit",
+                lblExpName: "Experiment Name",
+                phName: "e.g., Mr. Smith",
+                phOrg: "e.g., Grade 12-A",
+                phExpName: "e.g., Free Fall Acceleration Lab",
+                btnSubmitBooking: "Submit Booking Request",
+                adminPanelTitle: "Booking Approvals & Management",
+                adminPanelSubTitle: "Manage lab bookings, solve conflict overlaps",
+                pendingCountLabel: "Pending: ",
+                conflictAlertTitle: "Overlap Conflict Detected!",
+                conflictAlertMsg: "Multiple applications exist for the same venue & session. Admin action required.",
+                tabAll: "All",
+                tabPending: "Pending",
+                tabApproved: "Approved",
+                btnOk: "OK",
+                btnCancel: "Cancel",
+                btnLogin: "Login",
+                btnLogout: "Logout",
+                btnConfirmOverride: "Confirm & Override",
+                adminLoginTitle: "Admin Authentication",
+                adminLoginSub: "Enter admin password to access management controls",
+                lblPassword: "Admin Password",
+                errWrongPassword: "Incorrect password. Please try again.",
+                statusApproved: "Approved",
+                statusPending: "Pending",
+                statusRejected: "Rejected",
+                statusDisabled: "Closed",
+                statusAvailable: "Available",
+                statusConflict: "Overlap Conflict",
+                slotPrefix: "Period ",
+                msgDateDisabled: "This lab is set to closed on this selected date by admin.",
+                msgBookingSubmitted: "Reservation submitted successfully! Pending admin approval.",
+                msgDuplicateUserBlockedTitle: "Duplicate Booking Restricted",
+                msgDuplicateUserBlockedBody: "This time slot for this lab is already reserved or pending.<br/><br/><span class=\"text-rose-600 font-semibold\">Duplicate reservations for the same venue and time are not allowed.</span>",
+                msgOverrideTitle: "Override Conflict Warning",
+                msgOverrideBody: "Approving this will overlap with existing approved booking (Class: {orgs})!<br/><br/>Do you want to force override and approve?",
+                msgOverrideSuccess: "Booking approved and conflicting reservation replaced successfully.",
+                noRecord: "No booking records found.",
+                btnApprove: "Approve",
+                btnReject: "Reject",
+                btnDelete: "Delete"
+            }
+        };
+
+        // Precise 1-9 Period Times Map
+        const SLOT_TIMES = {
+            1: { start: "08:40", end: "09:20" },
+            2: { start: "09:25", end: "10:05" },
+            3: { start: "10:25", end: "11:05" },
+            4: { start: "11:10", end: "11:50" },
+            5: { start: "11:55", end: "12:35" },
+            6: { start: "14:10", end: "14:50" },
+            7: { start: "14:55", end: "15:35" },
+            8: { start: "15:40", end: "16:20" },
+            9: { start: "16:35", end: "17:35" }
+        };
+
+        function getSlotTimeString(slot) {
+            return `${SLOT_TIMES[slot].start}-${SLOT_TIMES[slot].end}`;
+        }
+
+        function getConsecutiveTimeString(s1, s2) {
+            return `${SLOT_TIMES[s1].start}-${SLOT_TIMES[s2].end}`;
+        }
+
+        // Application State
+        let currentLang = 'zh-TW';
+        let currentRole = 'user'; // 'user' or 'admin'
+        let isAdminLoggedIn = false;
+        let currentVenue = 'physics'; // 'physics' or 'chemistry'
+        const today = new Date();
+        let currentYear = today.getFullYear();
+        let currentMonth = today.getMonth();
+        let selectedDateStr = formatDate(today);
+        let adminFilter = 'all';
+
+        // Helper: Format Date YYYY-MM-DD
+        function formatDate(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        // Local Storage Operations
+        function getBookings() {
+            try {
+                return JSON.parse(localStorage.getItem('lab_bookings')) || [];
+            } catch (e) { return []; }
+        }
+
+        function saveBookings(data) {
+            localStorage.setItem('lab_bookings', JSON.stringify(data));
+            renderAll();
+        }
+
+        function getDateSettings() {
+            try {
+                return JSON.parse(localStorage.getItem('lab_date_settings')) || {};
+            } catch (e) { return {}; }
+        }
+
+        function saveDateSettings(data) {
+            localStorage.setItem('lab_date_settings', JSON.stringify(data));
+            renderAll();
+        }
+
+        // Real-time synchronization across browser tabs
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'lab_bookings' || e.key === 'lab_date_settings') {
+                renderAll();
+            }
+        });
+
+        function t(key) {
+            return i18n[currentLang][key] || key;
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'zh-TW' ? 'en' : 'zh-TW';
+            document.getElementById('lang-label-text').innerText = currentLang === 'zh-TW' ? 'English' : '繁體中文';
+            applyTranslations();
+            renderAll();
+        }
+
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (key && i18n[currentLang][key]) {
+                    el.innerHTML = i18n[currentLang][key];
+                }
+            });
+
+            document.getElementById('applicant-name').placeholder = t('phName');
+            document.getElementById('applicant-org').placeholder = t('phOrg');
+            document.getElementById('experiment-name').placeholder = t('phExpName');
+
+            updateSlotOptions();
+        }
+
+        function switchRole(role) {
+            if (role === 'admin' && !isAdminLoggedIn) {
+                openAdminLoginModal();
+                return;
+            }
+
+            currentRole = role;
+            updateRoleUI();
+            renderAll();
+        }
+
+        function updateRoleUI() {
+            const userBtn = document.getElementById('role-user-btn');
+            const adminBtn = document.getElementById('role-admin-btn');
+            const userPanel = document.getElementById('user-booking-panel');
+            const adminPanel = document.getElementById('admin-management-panel');
+            const adminToggleContainer = document.getElementById('admin-date-toggle-container');
+            const adminLogoutBtn = document.getElementById('admin-logout-btn');
+
+            if (currentRole === 'user') {
+                userBtn.className = "px-2.5 sm:px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center space-x-1 bg-white text-indigo-600 shadow-sm font-bold";
+                adminBtn.className = "px-2.5 sm:px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center space-x-1 text-slate-600 hover:text-slate-900";
+                userPanel.classList.remove('hidden');
+                adminPanel.classList.add('hidden');
+                adminToggleContainer.classList.add('hidden');
+                adminLogoutBtn.classList.add('hidden');
+            } else {
+                adminBtn.className = "px-2.5 sm:px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center space-x-1 bg-white text-indigo-600 shadow-sm font-bold";
+                userBtn.className = "px-2.5 sm:px-3 py-1.5 rounded-lg transition-all duration-200 flex items-center space-x-1 text-slate-600 hover:text-slate-900";
+                userPanel.classList.add('hidden');
+                adminPanel.classList.remove('hidden');
+                adminToggleContainer.classList.remove('hidden');
+                adminLogoutBtn.classList.remove('hidden');
+            }
+        }
+
+        function openAdminLoginModal() {
+            const modal = document.getElementById('admin-login-modal');
+            const modalContent = document.getElementById('admin-login-modal-content');
+            document.getElementById('admin-password').value = '';
+            document.getElementById('login-error-msg').classList.add('hidden');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+                document.getElementById('admin-password').focus();
+            }, 10);
+        }
+
+        function closeAdminLoginModal() {
+            const modal = document.getElementById('admin-login-modal');
+            const modalContent = document.getElementById('admin-login-modal-content');
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const passwordInput = document.getElementById('admin-password').value.trim();
+            
+            // Password verification required: 20161006
+            if (passwordInput === '20161006') {
+                isAdminLoggedIn = true;
+                currentRole = 'admin';
+                closeAdminLoginModal();
+                updateRoleUI();
+                renderAll();
+            } else {
+                document.getElementById('login-error-msg').classList.remove('hidden');
+            }
+        }
+
+        function adminLogout() {
+            isAdminLoggedIn = false;
+            currentRole = 'user';
+            updateRoleUI();
+            renderAll();
+        }
+
+        function switchVenue(venue) {
+            currentVenue = venue;
+            const physBtn = document.getElementById('venue-physics-btn');
+            const chemBtn = document.getElementById('venue-chemistry-btn');
+
+            if (venue === 'physics') {
+                physBtn.className = "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-2 bg-indigo-600 text-white shadow-sm";
+                chemBtn.className = "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900";
+            } else {
+                chemBtn.className = "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-2 bg-indigo-600 text-white shadow-sm";
+                physBtn.className = "flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900";
+            }
+
+            const venueName = venue === 'physics' ? t('venuePhysics') : t('venueChemistry');
+            document.getElementById('venue-indicator-text').innerText = venueName;
+            document.getElementById('form-venue-display').innerText = venueName;
+            renderAll();
+        }
+
+        function changeMonth(offset) {
+            currentMonth += offset;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            } else if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+        }
+
+        function selectDate(dateStr) {
+            selectedDateStr = dateStr;
+            document.getElementById('selected-date-title').innerText = dateStr;
+            document.getElementById('form-date-display').innerText = dateStr;
+            renderAll();
+        }
+
+        /**
+         * MONTHLY CALENDAR RENDERER
+         * Displays ONLY: "Period Number + Class Name" (e.g., "第1節 高三甲" or "P1 6A")
+         */
+        function renderCalendar() {
+            const calendarGrid = document.getElementById('calendar-grid');
+            calendarGrid.innerHTML = '';
+
+            const monthNamesEn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const monthText = currentLang === 'zh-TW' ? `${currentYear}年 ${currentMonth + 1}月` : `${monthNamesEn[currentMonth]} ${currentYear}`;
+            document.getElementById('calendar-month-year').innerText = monthText;
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+            const bookings = getBookings();
+            const dateSettings = getDateSettings();
+
+            // Blank prefix cells
+            for (let i = 0; i < firstDay; i++) {
+                const blank = document.createElement('div');
+                blank.className = 'bg-slate-50/50 min-h-[85px]';
+                calendarGrid.appendChild(blank);
+            }
+
+            // Month date cells
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateObj = new Date(currentYear, currentMonth, day);
+                const dateStr = formatDate(dateObj);
+
+                const cell = document.createElement('div');
+                const isSelected = dateStr === selectedDateStr;
+                const isToday = dateStr === formatDate(new Date());
+
+                // Filter active bookings (approved + pending)
+                const dayBookings = bookings.filter(b => b.date === dateStr && b.venue === currentVenue && b.status !== 'rejected');
+                const isDisabled = dateSettings[`${currentVenue}_${dateStr}`]?.disabled;
+
+                let cellBg = 'bg-white hover:bg-indigo-50/40';
+                if (isDisabled) cellBg = 'bg-slate-100/80 cursor-not-allowed';
+                if (isSelected) cellBg += ' ring-2 ring-indigo-600 ring-inset z-10';
+
+                cell.className = `${cellBg} min-h-[85px] p-1.5 transition flex flex-col justify-start cursor-pointer relative overflow-hidden`;
+                cell.onclick = () => selectDate(dateStr);
+
+                let numStyle = "text-xs font-semibold text-slate-700";
+                if (isToday) numStyle = "text-xs font-bold text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-full";
+
+                let bookingsListHtml = '';
+
+                if (isDisabled) {
+                    bookingsListHtml = `<div class="mt-1 text-[10px] text-amber-600 font-medium bg-amber-50 px-1 py-0.5 rounded border border-amber-200 text-center">${t('statusDisabled')}</div>`;
+                } else if (dayBookings.length > 0) {
+                    // Sort bookings by earliest slot
+                    const sortedBookings = [...dayBookings].sort((a,b) => Math.min(...a.slots) - Math.min(...b.slots));
+                    
+                    bookingsListHtml = '<div class="mt-1 space-y-1 w-full overflow-y-auto max-h-[62px] pr-0.5">';
+                    
+                    sortedBookings.forEach(b => {
+                        let periodLabel = "";
+                        if (currentLang === 'zh-TW') {
+                            periodLabel = b.slots.length === 1 ? `第${b.slots[0]}節` : `第${b.slots[0]}-${b.slots[b.slots.length - 1]}節`;
+                        } else {
+                            periodLabel = b.slots.length === 1 ? `P${b.slots[0]}` : `P${b.slots[0]}-${b.slots[b.slots.length - 1]}`;
+                        }
+
+                        let badgeColor = b.status === 'approved' 
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold' 
+                            : 'bg-amber-50 text-amber-800 border-amber-200 font-medium';
+
+                        // EXCLUSIVELY SHOW: "Period + Class Name" (e.g. "第1節 高三甲" / "P1 6A")
+                        bookingsListHtml += `
+                            <div class="text-[10px] p-0.5 px-1 rounded border leading-tight ${badgeColor} truncate" title="${periodLabel} ${b.org}">
+                                <span>${periodLabel}</span>
+                                <span class="ml-0.5 font-semibold">${b.org}</span>
+                            </div>
+                        `;
+                    });
+
+                    bookingsListHtml += '</div>';
+                }
+
+                cell.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="${numStyle}">${day}</span>
+                    </div>
+                    ${bookingsListHtml}
+                `;
+
+                calendarGrid.appendChild(cell);
+            }
+        }
+
+        function renderSlots() {
+            const slotsContainer = document.getElementById('slots-container');
+            slotsContainer.innerHTML = '';
+
+            const bookings = getBookings();
+            const dateSettings = getDateSettings();
+            const isDateDisabled = dateSettings[`${currentVenue}_${selectedDateStr}`]?.disabled;
+
+            const toggleText = document.getElementById('toggle-date-disabled-text');
+            toggleText.innerText = isDateDisabled ? t('toggleEnableDate') : t('toggleDisableDate');
+
+            for (let slot = 1; slot <= 9; slot++) {
+                const slotBookings = bookings.filter(b => 
+                    b.date === selectedDateStr && 
+                    b.venue === currentVenue && 
+                    b.slots.includes(slot) && 
+                    b.status !== 'rejected'
+                );
+
+                const slotCard = document.createElement('div');
+                let cardStyle = "border rounded-xl p-3 flex flex-col justify-between transition text-xs ";
+
+                const slotTimeFormatted = getSlotTimeString(slot);
+                const slotTitleText = currentLang === 'zh-TW' ? `${t('slotPrefix')}${slot}節` : `${t('slotPrefix')}${slot}`;
+
+                if (isDateDisabled) {
+                    cardStyle += "bg-slate-100 border-slate-200 text-slate-400";
+                    slotCard.className = cardStyle;
+                    slotCard.innerHTML = `
+                        <div class="flex justify-between items-center font-bold">
+                            <span>${slotTitleText}</span>
+                            <span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded">${t('statusDisabled')}</span>
+                        </div>
+                        <div class="text-[11px] mt-2 font-mono">${slotTimeFormatted}</div>
+                    `;
+                } else if (slotBookings.length === 0) {
+                    cardStyle += "bg-emerald-50/50 border-emerald-200 text-emerald-900";
+                    slotCard.className = cardStyle;
+                    slotCard.innerHTML = `
+                        <div class="flex justify-between items-center font-bold">
+                            <span>${slotTitleText}</span>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">${t('statusAvailable')}</span>
+                        </div>
+                        <div class="text-[11px] mt-2 text-emerald-600 font-medium font-mono">${slotTimeFormatted}</div>
+                    `;
+                } else {
+                    const isConflict = slotBookings.length > 1;
+                    const mainBooking = slotBookings[0];
+
+                    if (isConflict) {
+                        cardStyle += "bg-rose-50 border-rose-300 text-rose-900 shadow-sm";
+                        slotCard.className = cardStyle;
+                        slotCard.innerHTML = `
+                            <div class="flex justify-between items-center font-bold">
+                                <span>${slotTitleText}</span>
+                                <span class="text-[10px] bg-rose-600 text-white px-1.5 py-0.5 rounded flex items-center gap-1 animate-pulse">
+                                    <i data-lucide="alert-triangle" class="w-3 h-3"></i> ${t('statusConflict')} (${slotBookings.length})
+                                </span>
+                            </div>
+                            <div class="text-[11px] mt-1 font-semibold truncate">${slotBookings.map(b=>b.org).join(', ')}</div>
+                            <div class="text-[10px] text-rose-600 truncate">${slotBookings.map(b=>b.name).join(' / ')}</div>
+                            <div class="text-[10px] text-slate-500 font-mono mt-1">${slotTimeFormatted}</div>
+                        `;
+                    } else if (mainBooking.status === 'approved') {
+                        cardStyle += "bg-slate-100 border-slate-300 text-slate-700";
+                        slotCard.className = cardStyle;
+                        slotCard.innerHTML = `
+                            <div class="flex justify-between items-center font-bold">
+                                <span>${slotTitleText}</span>
+                                <span class="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded">${t('statusApproved')}</span>
+                            </div>
+                            <div class="text-[11px] font-semibold mt-1 truncate">${mainBooking.org} - ${mainBooking.name}</div>
+                            <div class="text-[10px] text-indigo-600 font-medium truncate">${mainBooking.experimentName}</div>
+                            <div class="text-[10px] text-slate-400 font-mono mt-1">${slotTimeFormatted}</div>
+                        `;
+                    } else { // Pending
+                        cardStyle += "bg-amber-50 border-amber-200 text-amber-900";
+                        slotCard.className = cardStyle;
+                        slotCard.innerHTML = `
+                            <div class="flex justify-between items-center font-bold">
+                                <span>${slotTitleText}</span>
+                                <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">${t('statusPending')}</span>
+                            </div>
+                            <div class="text-[11px] font-semibold mt-1 truncate">${mainBooking.org} - ${mainBooking.name}</div>
+                            <div class="text-[10px] text-amber-700 truncate">${mainBooking.experimentName}</div>
+                            <div class="text-[10px] text-amber-600/70 font-mono mt-1">${slotTimeFormatted}</div>
+                        `;
+                    }
+                }
+
+                slotsContainer.appendChild(slotCard);
+            }
+            lucide.createIcons();
+        }
+
+        /**
+         * CLEAN DROPDOWN BUILDER (Free of any stray doublePeriodSuffix tags)
+         */
+        function updateSlotOptions() {
+            const slotSelect = document.getElementById('slot-select');
+            if (!slotSelect) return;
+            
+            const prevVal = slotSelect.value;
+            slotSelect.innerHTML = '';
+
+            const slotTypeElem = document.querySelector('input[name="slot_type"]:checked');
+            const slotType = slotTypeElem ? slotTypeElem.value : 'single';
+
+            if (slotType === 'single') {
+                for (let i = 1; i <= 9; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    const optionLabel = currentLang === 'zh-TW' ? `${t('slotPrefix')}${i}節` : `${t('slotPrefix')}${i}`;
+                    opt.innerText = `${optionLabel} (${getSlotTimeString(i)})`;
+                    slotSelect.appendChild(opt);
+                }
+            } else { // Double period / 連續節數
+                for (let i = 1; i <= 8; i++) {
+                    const opt = document.createElement('option');
+                    opt.value = `${i},${i+1}`;
+                    
+                    // Pure, clean dropdown text formatting for Chinese and English
+                    if (currentLang === 'zh-TW') {
+                        opt.innerText = `連續節數：第 ${i} 及 第 ${i+1} 節 (${getConsecutiveTimeString(i, i+1)})`;
+                    } else {
+                        opt.innerText = `Double Period: Period ${i} & ${i+1} (${getConsecutiveTimeString(i, i+1)})`;
+                    }
+                    slotSelect.appendChild(opt);
+                }
+            }
+            if (prevVal) slotSelect.value = prevVal;
+        }
+
+        /**
+         * BOOKING SUBMISSION HANDLER WITH STRICT DUPLICATE CHECK FOR USER
+         */
+        function handleBookingSubmit(event) {
+            event.preventDefault();
+
+            const dateSettings = getDateSettings();
+            if (dateSettings[`${currentVenue}_${selectedDateStr}`]?.disabled) {
+                showModal(t('statusDisabled'), t('msgDateDisabled'), 'warning');
+                return;
+            }
+
+            const slotValue = document.getElementById('slot-select').value;
+            const slots = slotValue.split(',').map(Number);
+
+            const name = document.getElementById('applicant-name').value.trim();
+            const org = document.getElementById('applicant-org').value.trim();
+            const experimentName = document.getElementById('experiment-name').value.trim();
+
+            const bookings = getBookings();
+
+            // STRICT CHECK: Detect if slot overlaps with ANY non-rejected booking for same date and venue
+            const existingOverlaps = bookings.filter(b => 
+                b.date === selectedDateStr &&
+                b.venue === currentVenue &&
+                b.status !== 'rejected' &&
+                b.slots.some(s => slots.includes(s))
+            );
+
+            // User Role is STRICTLY BLOCKED from duplicate bookings
+            if (currentRole === 'user' && existingOverlaps.length > 0) {
+                showModal(
+                    t('msgDuplicateUserBlockedTitle'),
+                    t('msgDuplicateUserBlockedBody'),
+                    'warning'
+                );
+                return;
+            }
+
+            const newBooking = {
+                id: 'BK_' + Date.now() + '_' + Math.floor(Math.random()*1000),
+                venue: currentVenue,
+                date: selectedDateStr,
+                slots: slots,
+                name: name,
+                org: org,
+                experimentName: experimentName,
+                status: 'pending',
+                createdAt: new Date().toISOString()
+            };
+
+            bookings.push(newBooking);
+            saveBookings(bookings);
+
+            // Clear input fields
+            document.getElementById('applicant-name').value = '';
+            document.getElementById('applicant-org').value = '';
+            document.getElementById('experiment-name').value = '';
+
+            showModal(t('btnSubmitBooking'), t('msgBookingSubmitted'), 'success');
+        }
+
+        function setAdminFilter(filter) {
+            adminFilter = filter;
+            ['all', 'pending', 'approved'].forEach(f => {
+                const btn = document.getElementById(`admin-tab-${f}`);
+                if (f === filter) {
+                    btn.className = "pb-2 px-3 text-indigo-600 border-b-2 border-indigo-600 font-bold";
+                } else {
+                    btn.className = "pb-2 px-3 text-slate-500 hover:text-slate-800 font-semibold";
+                }
+            });
+            renderAdminPanel();
+        }
+
+        function renderAdminPanel() {
+            const listContainer = document.getElementById('admin-booking-list');
+            listContainer.innerHTML = '';
+
+            const bookings = getBookings();
+            const pendingCount = bookings.filter(b => b.status === 'pending').length;
+            document.getElementById('pending-count-badge').innerText = `${t('pendingCountLabel')}${pendingCount}`;
+
+            // Check conflicts across all active bookings
+            let hasGlobalConflict = false;
+            const activeBookings = bookings.filter(b => b.status !== 'rejected');
+            
+            const slotOccupancy = {};
+            activeBookings.forEach(b => {
+                b.slots.forEach(s => {
+                    const key = `${b.venue}_${b.date}_${s}`;
+                    slotOccupancy[key] = (slotOccupancy[key] || 0) + 1;
+                    if (slotOccupancy[key] > 1) hasGlobalConflict = true;
+                });
+            });
+
+            const alertBox = document.getElementById('conflict-alert-box');
+            if (hasGlobalConflict) {
+                alertBox.classList.remove('hidden');
+            } else {
+                alertBox.classList.add('hidden');
+            }
+
+            let filtered = bookings.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            if (adminFilter === 'pending') filtered = filtered.filter(b => b.status === 'pending');
+            if (adminFilter === 'approved') filtered = filtered.filter(b => b.status === 'approved');
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">${t('noRecord')}</p>`;
+                return;
+            }
+
+            filtered.forEach(b => {
+                const isColliding = b.status !== 'rejected' && b.slots.some(s => {
+                    const key = `${b.venue}_${b.date}_${s}`;
+                    return slotOccupancy[key] > 1;
+                });
+
+                const item = document.createElement('div');
+                let borderClass = "border-slate-200";
+                if (isColliding) borderClass = "border-rose-300 bg-rose-50/50";
+
+                item.className = `p-3.5 rounded-xl border ${borderClass} bg-white shadow-sm space-y-2 text-xs`;
+
+                let slotText = "";
+                if (b.slots.length === 1) {
+                    const singleLabel = currentLang === 'zh-TW' ? `${t('slotPrefix')}${b.slots[0]}節` : `${t('slotPrefix')}${b.slots[0]}`;
+                    slotText = `${singleLabel} (${getSlotTimeString(b.slots[0])})`;
+                } else {
+                    const multiLabel = currentLang === 'zh-TW' ? `${t('slotPrefix')}${b.slots.join(' & ')}節` : `${t('slotPrefix')}${b.slots.join(' & ')}`;
+                    slotText = `${multiLabel} (${getConsecutiveTimeString(b.slots[0], b.slots[1])})`;
+                }
+
+                const venueName = b.venue === 'physics' ? t('venuePhysics') : t('venueChemistry');
+
+                let statusBadge = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">${t('statusPending')}</span>`;
+                if (b.status === 'approved') statusBadge = `<span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">${t('statusApproved')}</span>`;
+                if (b.status === 'rejected') statusBadge = `<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">${t('statusRejected')}</span>`;
+
+                item.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-bold text-slate-800 flex items-center gap-1.5 flex-wrap">
+                                <span>${venueName}</span>
+                                <span class="text-slate-400">•</span>
+                                <span>${b.date}</span>
+                                <span class="text-slate-400">•</span>
+                                <span class="text-indigo-600 font-mono">${slotText}</span>
+                            </div>
+                            <div class="text-slate-600 font-medium mt-0.5">${b.org} - ${b.name}</div>
+                        </div>
+                        <div>${statusBadge}</div>
+                    </div>
+
+                    ${isColliding ? `
+                        <div class="flex items-center space-x-1 text-rose-600 font-bold text-[11px] bg-rose-100/80 p-1.5 rounded-lg">
+                            <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                            <span>${t('conflictAlertTitle')}</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="text-indigo-900 bg-indigo-50/60 p-2 rounded-lg border border-indigo-100 font-medium">
+                        <span class="text-slate-500 font-normal">${t('lblExpName')}: </span>${b.experimentName}
+                    </div>
+
+                    <div class="flex justify-end space-x-2 pt-1">
+                        ${b.status !== 'approved' ? `
+                            <button onclick="updateBookingStatus('${b.id}', 'approved')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition flex items-center space-x-1">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                                <span>${t('btnApprove')}</span>
+                            </button>
+                        ` : ''}
+                        ${b.status !== 'rejected' ? `
+                            <button onclick="updateBookingStatus('${b.id}', 'rejected')" class="px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg font-bold transition flex items-center space-x-1">
+                                <i data-lucide="x" class="w-3 h-3"></i>
+                                <span>${t('btnReject')}</span>
+                            </button>
+                        ` : ''}
+                        <button onclick="deleteBooking('${b.id}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-medium transition">
+                            ${t('btnDelete')}
+                        </button>
+                    </div>
+                `;
+
+                listContainer.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        function updateBookingStatus(id, newStatus) {
+            let bookings = getBookings();
+            const target = bookings.find(b => b.id === id);
+
+            if (target && newStatus === 'approved') {
+                const overlaps = bookings.filter(b => 
+                    b.id !== id &&
+                    b.venue === target.venue &&
+                    b.date === target.date &&
+                    b.status === 'approved' &&
+                    b.slots.some(s => target.slots.includes(s))
+                );
+
+                if (overlaps.length > 0) {
+                    const overlapOrgs = overlaps.map(o => o.org).join(', ');
+                    const bodyMsg = t('msgOverrideBody').replace('{orgs}', overlapOrgs);
+
+                    showModal(
+                        t('msgOverrideTitle'),
+                        bodyMsg,
+                        'warning',
+                        true,
+                        () => {
+                            overlaps.forEach(o => o.status = 'rejected');
+                            target.status = 'approved';
+                            saveBookings(bookings);
+                            showModal(t('statusApproved'), t('msgOverrideSuccess'), 'success');
+                        }
+                    );
+                    return;
+                }
+            }
+
+            if (target) {
+                target.status = newStatus;
+                saveBookings(bookings);
+            }
+        }
+
+        function deleteBooking(id) {
+            let bookings = getBookings();
+            bookings = bookings.filter(b => b.id !== id);
+            saveBookings(bookings);
+        }
+
+        function toggleDateDisabledState() {
+            const dateSettings = getDateSettings();
+            const key = `${currentVenue}_${selectedDateStr}`;
+
+            if (dateSettings[key]?.disabled) {
+                delete dateSettings[key];
+            } else {
+                dateSettings[key] = { disabled: true };
+            }
+            saveDateSettings(dateSettings);
+        }
+
+        function showModal(title, message, type = 'info', showConfirmBtn = false, onConfirm = null) {
+            const modal = document.getElementById('custom-modal');
+            const modalContent = document.getElementById('custom-modal-content');
+            const iconBg = document.getElementById('modal-icon-bg');
+            const icon = document.getElementById('modal-icon');
+            const actions = document.getElementById('modal-actions');
+
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerHTML = message;
+
+            if (type === 'warning') {
+                iconBg.className = 'p-2.5 rounded-full bg-amber-100 text-amber-600';
+                icon.setAttribute('data-lucide', 'alert-triangle');
+            } else if (type === 'success') {
+                iconBg.className = 'p-2.5 rounded-full bg-emerald-100 text-emerald-600';
+                icon.setAttribute('data-lucide', 'check-circle');
+            } else {
+                iconBg.className = 'p-2.5 rounded-full bg-indigo-100 text-indigo-600';
+                icon.setAttribute('data-lucide', 'info');
+            }
+
+            if (showConfirmBtn) {
+                actions.innerHTML = `
+                    <button onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition">${t('btnCancel')}</button>
+                    <button id="modal-confirm-btn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition">${t('btnConfirmOverride')}</button>
+                `;
+                document.getElementById('modal-confirm-btn').onclick = () => {
+                    closeModal();
+                    if (onConfirm) onConfirm();
+                };
+            } else {
+                actions.innerHTML = `
+                    <button onclick="closeModal()" class="px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold transition">${t('btnOk')}</button>
+                `;
+            }
+
+            lucide.createIcons();
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-modal');
+            const modalContent = document.getElementById('custom-modal-content');
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function renderAll() {
+            document.getElementById('selected-date-title').innerText = selectedDateStr;
+            document.getElementById('form-date-display').innerText = selectedDateStr;
+            renderCalendar();
+            renderSlots();
+            if (currentRole === 'admin') {
+                renderAdminPanel();
+            }
+        }
+
+        window.onload = function() {
+            if (!localStorage.getItem('lab_bookings')) {
+                const sampleBookings = [
+                    {
+                        id: 'BK_001',
+                        venue: 'physics',
+                        date: formatDate(today),
+                        slots: [1, 2],
+                        name: '張老師 (Mr. Cheung)',
+                        org: '高二乙',
+                        experimentName: '自由落體加速度測定實驗 (Free Fall Acceleration)',
+                        status: 'approved',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: 'BK_002',
+                        venue: 'physics',
+                        date: formatDate(today),
+                        slots: [3],
+                        name: '李老師 (Mr. Lee)',
+                        org: '高三甲',
+                        experimentName: '單擺週期與重力加速度 (Simple Pendulum)',
+                        status: 'pending',
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                localStorage.setItem('lab_bookings', JSON.stringify(sampleBookings));
+            }
+
+            applyTranslations();
+            updateRoleUI();
+            renderAll();
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
